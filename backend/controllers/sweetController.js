@@ -90,3 +90,24 @@ export const updateSweet = async (req, res) => {
     res.status(500).send('Server Error');
   }
 };
+
+// @route   DELETE /api/sweets/:id
+// @desc    Delete a sweet (Admin only)
+// @access  Private
+export const deleteSweet = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (user.role !== 'admin') {
+      return res.status(403).json({ msg: 'Access denied: Admin role required' });
+    }
+
+    const sweet = await Sweet.findById(req.params.id);
+    if (!sweet) return res.status(404).json({ msg: 'Sweet not found' });
+
+    await sweet.deleteOne();
+    res.json({ msg: 'Sweet removed' });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+};
