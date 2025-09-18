@@ -1,9 +1,9 @@
-// backend/index.js
-
-require('dotenv').config();
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
+import 'dotenv/config';
+import express from 'express';
+import mongoose from 'mongoose';
+import cors from 'cors';
+import authRoutes from './routes/auth.js';
+import sweetRoutes from './routes/sweets.js';
 
 const app = express();
 
@@ -25,9 +25,14 @@ mongoose.connect(process.env.MONGO_URI)
 app.get('/', (req, res) => res.send('Sweet Shop API is Running'));
 
 // Plug in the authentication routes
-app.use('/api/auth', require('./routes/auth'));
+app.use('/api/auth', authRoutes);
+
+// Plug in the sweets routes
+app.use('/api/sweets', sweetRoutes);
 
 
 // --- Start Server ---
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+
+export default app;

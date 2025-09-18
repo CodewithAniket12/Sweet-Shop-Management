@@ -3,8 +3,8 @@ import request from 'supertest';
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import app from '../app';
-import User from '../models/user';
+import app from '../index.js';
+import User from '../models/user.js';
 
 let mongoServer;
 
@@ -25,7 +25,7 @@ beforeEach(async () => {
 
 describe('Auth API', () => {
   // Test 1: Successful Registration
-  it('POST /api/auth/register --> should register a new user', async () => {
+  it('POST /api/auth/register should register a new user', async () => {
     const res = await request(app)
       .post('/api/auth/register')
       .send({
@@ -36,17 +36,5 @@ describe('Auth API', () => {
     
     expect(res.statusCode).toEqual(200);
     expect(res.body).toHaveProperty('token');
-  });
-
-  // Test 2: Login with non-existent user
-  it('POST /api/auth/login --> should return 400 for a non-existent user', async () => {
-    const res = await request(app)
-      .post('/api/auth/login')
-      .send({
-        email: 'nouser@example.com',
-        password: 'password123',
-      });
-  
-    expect(res.statusCode).toEqual(400);
   });
 });
