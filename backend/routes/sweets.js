@@ -2,7 +2,7 @@
 import express from 'express';
 const router = express.Router();
 import auth from '../middleware/auth.js';
-import { createSweet, getAllSweets, searchSweets } from '../controllers/sweetController.js';
+import { createSweet, getAllSweets, searchSweets, updateSweet } from '../controllers/sweetController.js';
 
 // @route   POST /api/sweets
 // @desc    Create a new sweet
@@ -18,5 +18,10 @@ router.get('/', getAllSweets);
 // @desc    Search for sweets
 // @access  Public
 router.get('/search', searchSweets);
+
+// @route   PUT /api/sweets/:id
+// @desc    Update a sweet
+// @access  Private
+router.put('/:id', auth, updateSweet);
 
 export default router;

@@ -68,3 +68,25 @@ export const searchSweets = async (req, res) => {
     res.status(500).send('Server Error');
   }
 };
+
+// @route   PUT /api/sweets/:id
+// @desc    Update a sweet
+// @access  Private
+export const updateSweet = async (req, res) => {
+  try {
+    const sweet = await Sweet.findById(req.params.id);
+    if (!sweet) return res.status(404).json({ msg: 'Sweet not found' });
+
+    const { name, category, price, quantity } = req.body;
+    sweet.name = name || sweet.name;
+    sweet.category = category || sweet.category;
+    sweet.price = price || sweet.price;
+    sweet.quantity = quantity || sweet.quantity;
+
+    await sweet.save();
+    res.json(sweet);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+};
