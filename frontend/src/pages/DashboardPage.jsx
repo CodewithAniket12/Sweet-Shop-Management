@@ -1,5 +1,6 @@
 // src/pages/DashboardPage.jsx
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getAllSweets, searchSweets, purchaseSweet, restockSweet } from '../api/sweets';
 import Swal from 'sweetalert2';
 import { ShoppingCart } from 'lucide-react';
@@ -7,6 +8,7 @@ import { jwtDecode } from "jwt-decode";
 
 
 function DashboardPage() {
+    const navigate = useNavigate();
   const [sweets, setSweets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -82,7 +84,8 @@ function DashboardPage() {
           return 'Please enter a valid amount!';
         }
       }
-    });
+    }
+);
 
     if (amount) {
       try {
@@ -103,6 +106,11 @@ function DashboardPage() {
       }
     }
   };
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    navigate('/login');
+  };
+
   
   if (loading) {
     return <div className="text-center mt-8">Loading sweets...</div>;
@@ -112,8 +120,10 @@ function DashboardPage() {
     <div className="bg-gray-100 min-h-screen">
       <header className="bg-white shadow-md p-4 flex justify-between items-center">
         <h1 className="text-2xl font-bold text-pink-500">Aniket-Sweets</h1>
-        {/* We'll add a real logout button later */}
-        <button className="text-gray-600 hover:text-pink-500">Logout</button>
+
+       <button onClick={handleLogout} className="text-gray-600 hover:text-pink-500">
+          Logout
+        </button>
       </header>
 
       <main className="p-8">
