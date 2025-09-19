@@ -1,17 +1,19 @@
 // src/pages/DashboardPage.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getAllSweets, searchSweets, purchaseSweet, restockSweet } from '../api/sweets';
 import Swal from 'sweetalert2';
-import { ShoppingCart, Search } from 'lucide-react'; // Import Search icon
+import { ShoppingCart, Search, Plus, Edit, Trash2 } from 'lucide-react';
 import { jwtDecode } from "jwt-decode";
-
+import { getAllSweets, searchSweets, purchaseSweet, restockSweet, createSweet, updateSweet, deleteSweet } from '../api/sweets';
 
 function DashboardPage() {
   const [sweets, setSweets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [formData, setFormData] = useState({ name: '', category: '', price: '', quantity: '' });
+  const [editingSweet, setEditingSweet] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -22,10 +24,12 @@ function DashboardPage() {
         setIsAdmin(decoded.user.role === 'admin');
       } catch (e) {
         console.error("Failed to decode token:", e);
+        navigate('/login');
       }
     } else {
       navigate('/login');
     }
+    fetchSweets();
   }, [navigate]);
 
   const fetchSweets = async (params = {}) => {
@@ -49,12 +53,10 @@ function DashboardPage() {
     fetchSweets();
   }, []);
 
-  // Update this function to only change the state
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
   };
   
-  // Add this new function to handle the search button click
   const handleSearchSubmit = () => {
     fetchSweets({ name: searchTerm });
   };
@@ -92,91 +94,162 @@ function DashboardPage() {
         }
       }
     });
-
     if (amount) {
       try {
         await restockSweet(sweetId, Number(amount));
-        Swal.fire({
-          icon: 'success',
-          title: 'Restock Successful!',
-          timer: 1500,
-          showConfirmButton: false
-        });
+        Swal.fire({ icon: 'success', title: 'Restock Successful!', timer: 1500, showConfirmButton: false });
         fetchSweets();
       } catch (error) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Restock Failed',
-          text: error.response?.data?.msg || 'Something went wrong.'
-        });
+        Swal.fire({ icon: 'error', title: 'Restock Failed', text: error.response?.data?.msg || 'Something went wrong.' });
       }
     }
   };
-  
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     navigate('/login');
   };
 
-  if (loading) {
-    return <div className="text-center mt-8">Loading sweets...</div>;
-  }
+  const handleAdminPanelSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (editingSweet) {
+        await updateSweet(editingSweet._id, formData);
+        Swal.fire('Updated!', 'Sweet has been updated.', 'success');
+      } else {
+        await createSweet(formData);
+        Swal.fire('Created!', 'Sweet has been created.', 'success');
+      }
+      setFormData({ name: '', category: '', price: '', quantity: '' });
+      setEditingSweet(null);
+      fetchSweets();
+    } catch (error) {
+      Swal.fire('Error', error.response?.data?.msg || 'Something went wrong.', 'error');
+    }
+  };
+
+  const handleEditClick = (sweet) => {
+    setEditingSweet(sweet);
+    setFormData({
+      name: sweet.name,
+      category: sweet.category,
+      price: sweet.price,
+      quantity: sweet.quantity,
+    });
+    setShowAdminPanel(true);
+  };
+
+  const handleDelete = async (sweetId) => {
+    Swal.fire({
+      title: 'Are you sure?',
+      text: "You won't be able to revert this!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete it!',
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await deleteSweet(sweetId);
+          Swal.fire('Deleted!', 'Sweet has been deleted.', 'success');
+          fetchSweets();
+        } catch (error) {
+          Swal.fire('Error', error.response?.data?.msg || 'Something went wrong.', 'error');
+        }
+      }
+    });
+  };
+
+  if (loading) return <div className="text-center mt-8">Loading sweets...</div>;
 
   return (
     <div className="bg-gray-100 min-h-screen">
       <header className="bg-white shadow-md p-4 flex justify-between items-center">
         <h1 className="text-2xl font-bold text-pink-500">Aniket-Sweets</h1>
-        <button onClick={handleLogout} className="text-gray-600 hover:text-pink-500">Logout</button>
+        <div className="flex items-center space-x-4">
+          {isAdmin && (
+            <button onClick={() => setShowAdminPanel(!showAdminPanel)} className="flex items-center gap-2 text-blue-600 hover:text-blue-800">
+              <Plus size={18} /> Admin Panel
+            </button>
+          )}
+          <button onClick={handleLogout} className="text-gray-600 hover:text-pink-500">Logout</button>
+        </div>
       </header>
 
       <main className="p-8">
-        <div className="mb-6 flex">
-          <input
-            type="text"
-            placeholder="Search sweets by name..."
-            value={searchTerm}
-            onChange={handleSearchChange}
-            className="w-full px-4 py-2 border rounded-l-md focus:outline-none focus:ring-1 focus:ring-blue-600"
-          />
-          <button
-            onClick={handleSearchSubmit}
-            className="px-4 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700"
-          >
-            <Search size={20} />
-          </button>
+        {showAdminPanel && isAdmin && (
+          <div className="bg-white p-6 rounded-lg shadow-md mb-8">
+            <h2 className="text-2xl font-semibold mb-4">{editingSweet ? 'Edit Sweet' : 'Add New Sweet'}</h2>
+            <form onSubmit={handleAdminPanelSubmit}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <input type="text" name="name" placeholder="Name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="border p-2 rounded-md" required />
+                <input type="text" name="category" placeholder="Category" value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className="border p-2 rounded-md" required />
+                <input type="number" name="price" placeholder="Price" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} className="border p-2 rounded-md" required />
+                <input type="number" name="quantity" placeholder="Quantity" value={formData.quantity} onChange={(e) => setFormData({ ...formData, quantity: e.target.value })} className="border p-2 rounded-md" required />
+              </div>
+              <button type="submit" className="w-full bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600">
+                {editingSweet ? 'Update Sweet' : 'Add Sweet'}
+              </button>
+            </form>
+          </div>
+        )}
+
+        <div className="mb-6 flex items-center justify-between">
+          <h2 className="text-2xl font-bold">All Sweets</h2>
+          <div className="relative flex">
+            <input
+              type="text"
+              placeholder="Search sweets by name..."
+              value={searchTerm}
+              onChange={handleSearchChange}
+              className="w-64 px-4 py-2 border rounded-l-md focus:outline-none focus:ring-1 focus:ring-blue-600"
+            />
+            <button
+              onClick={handleSearchSubmit}
+              className="px-4 py-2 bg-pink-500 text-white rounded-r-md hover:bg-pink-600 focus:outline-none focus:ring-1 focus:ring-pink-600"
+            >
+              <Search size={20} />
+            </button>
+          </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {sweets.map((sweet) => (
-            <div key={sweet._id} className="bg-white rounded-lg shadow-lg overflow-hidden flex flex-col">
-              <div className="p-6 flex-grow">
-                <h3 className="text-xl font-bold mb-2">{sweet.name}</h3>
-                <p className="text-gray-600 mb-2">{sweet.category}</p>
+
+        {sweets.length === 0 ? (
+          <p className="text-center text-gray-500">No sweets available.</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {sweets.map((sweet) => (
+              <div key={sweet._id} className="bg-white p-6 rounded-lg shadow-md flex flex-col">
+                <h3 className="text-xl font-semibold mb-2">{sweet.name}</h3>
+                <p className="text-gray-600 mb-2">Category: {sweet.category}</p>
                 <p className="text-lg font-semibold text-pink-500 mb-4">₹{sweet.price}</p>
-                <p className="text-sm text-gray-500">
-                  {sweet.quantity > 0 ? `${sweet.quantity} in stock` : 'Out of Stock'}
-                </p>
+                <div className="flex justify-between items-center mt-auto">
+                  <p className="text-sm text-gray-500">
+                    {sweet.quantity > 0 ? `${sweet.quantity} in stock` : 'Out of Stock'}
+                  </p>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handlePurchase(sweet._id)}
+                      disabled={sweet.quantity === 0}
+                      className="flex items-center justify-center gap-1 bg-pink-500 text-white p-2 rounded-md hover:bg-pink-600 transition-colors disabled:bg-gray-400"
+                    >
+                      <ShoppingCart size={18} />
+                      Purchase
+                    </button>
+                    {isAdmin && (
+                      <>
+                        <button onClick={() => handleEditClick(sweet)} className="text-blue-500 hover:text-blue-700">
+                          <Edit size={20} />
+                        </button>
+                        <button onClick={() => handleDelete(sweet._id)} className="text-red-500 hover:text-red-700">
+                          <Trash2 size={20} />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
-              <div className="p-6 pt-0">
-                <button
-                  onClick={() => handlePurchase(sweet._id)}
-                  disabled={sweet.quantity === 0}
-                  className="w-full flex items-center justify-center gap-2 bg-pink-500 text-white p-2 rounded-md hover:bg-pink-600 transition-colors disabled:bg-gray-400 mb-2"
-                >
-                  <ShoppingCart size={18} />
-                  Purchase
-                </button>
-                {isAdmin && (
-                  <button
-                    onClick={() => handleRestock(sweet._id)}
-                    className="w-full bg-green-500 text-white p-2 rounded-md hover:bg-green-600 transition-colors"
-                  >
-                    Restock
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </main>
     </div>
   );
