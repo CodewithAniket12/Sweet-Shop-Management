@@ -24,6 +24,7 @@ function LoginPage() {
         timer: 2000,
         showConfirmButton: false,
       });
+      window.location.href = '/dashboard';
     } catch (error) {
       Swal.fire({
         icon: 'error',
