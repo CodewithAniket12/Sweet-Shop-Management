@@ -1,15 +1,32 @@
-// frontend/src/pages/DashboardPage.jsx
+// src/pages/DashboardPage.jsx
 import React, { useState, useEffect } from 'react';
-import { getAllSweets, searchSweets, purchaseSweet } from '../api/sweets';
+import { getAllSweets, searchSweets, purchaseSweet, restockSweet } from '../api/sweets';
 import Swal from 'sweetalert2';
 import { ShoppingCart } from 'lucide-react';
+import { jwtDecode } from "jwt-decode";
+
 
 function DashboardPage() {
   const [sweets, setSweets] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        setIsAdmin(decoded.user.role === 'admin');
+      } catch (e) {
+        console.error("Failed to decode token:", e);
+      }
+    }
+  }, []);
 
   const fetchSweets = async (params = {}) => {
     try {
+      setLoading(true);
       const { data } = Object.keys(params).length > 0 ? await searchSweets(params) : await getAllSweets();
       setSweets(data);
     } catch (error) {
@@ -19,6 +36,8 @@ function DashboardPage() {
         title: 'Could Not Load Sweets',
         text: 'Please make sure you are logged in and try again.'
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -50,6 +69,44 @@ function DashboardPage() {
       });
     }
   };
+
+  const handleRestock = async (sweetId) => {
+    const { value: amount } = await Swal.fire({
+      title: 'Restock Sweet',
+      input: 'number',
+      inputLabel: 'Amount to restock',
+      inputPlaceholder: 'Enter amount',
+      showCancelButton: true,
+      inputValidator: (value) => {
+        if (!value || value <= 0) {
+          return 'Please enter a valid amount!';
+        }
+      }
+    });
+
+    if (amount) {
+      try {
+        await restockSweet(sweetId, Number(amount));
+        Swal.fire({
+          icon: 'success',
+          title: 'Restock Successful!',
+          timer: 1500,
+          showConfirmButton: false
+        });
+        fetchSweets();
+      } catch (error) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Restock Failed',
+          text: error.response?.data?.msg || 'Something went wrong.'
+        });
+      }
+    }
+  };
+  
+  if (loading) {
+    return <div className="text-center mt-8">Loading sweets...</div>;
+  }
 
   return (
     <div className="bg-gray-100 min-h-screen">
@@ -84,11 +141,19 @@ function DashboardPage() {
                 <button
                   onClick={() => handlePurchase(sweet._id)}
                   disabled={sweet.quantity === 0}
-                  className="w-full flex items-center justify-center gap-2 bg-pink-500 text-white p-2 rounded-md hover:bg-pink-600 transition-colors disabled:bg-gray-400"
+                  className="w-full flex items-center justify-center gap-2 bg-pink-500 text-white p-2 rounded-md hover:bg-pink-600 transition-colors disabled:bg-gray-400 mb-2"
                 >
                   <ShoppingCart size={18} />
                   Purchase
                 </button>
+                {isAdmin && (
+                  <button
+                    onClick={() => handleRestock(sweet._id)}
+                    className="w-full bg-green-500 text-white p-2 rounded-md hover:bg-green-600 transition-colors"
+                  >
+                    Restock
+                  </button>
+                )}
               </div>
             </div>
           ))}

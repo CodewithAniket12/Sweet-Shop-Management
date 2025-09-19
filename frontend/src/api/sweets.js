@@ -15,3 +15,4 @@ api.interceptors.request.use((req) => {
 export const getAllSweets = () => api.get('/sweets');
 export const searchSweets = (searchParams) => api.get(`/sweets/search`, { params: searchParams });
 export const purchaseSweet = (id) => api.post(`/sweets/${id}/purchase`);
+export const restockSweet = (id, amount) => api.post(`/sweets/${id}/restock`, { amount });
