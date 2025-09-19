@@ -1,15 +1,16 @@
-// src/pages/DashboardPage.jsx
+// frontend/src/pages/DashboardPage.jsx
 import React, { useState, useEffect } from 'react';
-import { getAllSweets, purchaseSweet } from '../api/sweets';
+import { getAllSweets, searchSweets, purchaseSweet } from '../api/sweets';
 import Swal from 'sweetalert2';
 import { ShoppingCart } from 'lucide-react';
 
 function DashboardPage() {
   const [sweets, setSweets] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  const fetchSweets = async () => {
+  const fetchSweets = async (params = {}) => {
     try {
-      const { data } = await getAllSweets();
+      const { data } = Object.keys(params).length > 0 ? await searchSweets(params) : await getAllSweets();
       setSweets(data);
     } catch (error) {
       console.error("Failed to fetch sweets:", error);
@@ -24,6 +25,12 @@ function DashboardPage() {
   useEffect(() => {
     fetchSweets();
   }, []);
+
+  const handleSearchChange = (e) => {
+    const term = e.target.value;
+    setSearchTerm(term);
+    fetchSweets({ name: term });
+  };
 
   const handlePurchase = async (sweetId) => {
     try {
@@ -53,6 +60,15 @@ function DashboardPage() {
       </header>
 
       <main className="p-8">
+        <div className="mb-6">
+          <input
+            type="text"
+            placeholder="Search sweets by name..."
+            value={searchTerm}
+            onChange={handleSearchChange}
+            className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"
+          />
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {sweets.map((sweet) => (
             <div key={sweet._id} className="bg-white rounded-lg shadow-lg overflow-hidden flex flex-col">

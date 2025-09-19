@@ -1,4 +1,4 @@
-
+// frontend/src/api/sweet.js
 import axios from 'axios';
 
 const api = axios.create({ baseURL: 'http://localhost:5001/api' });
@@ -13,4 +13,5 @@ api.interceptors.request.use((req) => {
 });
 
 export const getAllSweets = () => api.get('/sweets');
+export const searchSweets = (searchParams) => api.get(`/sweets/search`, { params: searchParams });
 export const purchaseSweet = (id) => api.post(`/sweets/${id}/purchase`);
