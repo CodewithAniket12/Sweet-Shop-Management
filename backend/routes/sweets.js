@@ -1,33 +1,29 @@
-// backend/routes/sweets.js
 import express from 'express';
 const router = express.Router();
 import auth from '../middleware/auth.js';
-import { createSweet, getAllSweets, searchSweets, updateSweet, deleteSweet, purchaseSweet } from '../controllers/sweetController.js';
+import admin from '../middleware/admin.js';
 
-// @route   POST /api/sweets
-// @desc    Create a new sweet
-// @access  Private
-router.post('/', auth, createSweet);
+import { 
+  createSweet, 
+  getAllSweets, 
+  searchSweets, 
+  updateSweet, 
+  deleteSweet,
+  purchaseSweet,
+  restockSweet
+} from '../controllers/sweetController.js';
 
-// @route   GET /api/sweets
-// @desc    Get all sweets
-// @access  Public
+// --- Public Routes --- (Anyone can access)
 router.get('/', getAllSweets);
-
-// @route   GET /api/sweets/search
-// @desc    Search for sweets
-// @access  Public
 router.get('/search', searchSweets);
 
-// @route   PUT /api/sweets/:id
-// @desc    Update a sweet
-// @access  Private
-router.put('/:id', auth, updateSweet);
-
-// @route   DELETE /api/sweets/:id
-// @desc    Delete a sweet (Admin only)
-// @access  Private
-router.delete('/:id', auth, deleteSweet);
+// --- Protected User Routes --- (Must be logged in)
 router.post('/:id/purchase', auth, purchaseSweet);
+
+// --- Protected Admin Routes --- (Must be logged in as an Admin)
+router.post('/', [auth, admin], createSweet);
+router.put('/:id', [auth, admin], updateSweet);
+router.delete('/:id', [auth, admin], deleteSweet);
+router.post('/:id/restock', [auth, admin], restockSweet);
 
 export default router;

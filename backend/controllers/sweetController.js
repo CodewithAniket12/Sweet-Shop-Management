@@ -2,6 +2,7 @@
 import Sweet from '../models/sweet.js';
 import User from '../models/user.js';
 
+
 // @route   POST /api/sweets
 // @desc    Create a new sweet
 // @access  Private
@@ -122,6 +123,32 @@ export const purchaseSweet = async (req, res) => {
     }
     sweet.quantity -= 1;
     await sweet.save();
+    res.json(sweet); // Send back the updated sweet
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+};
+export const restockSweet = async (req, res) => {
+  try {
+    const { amount } = req.body; // Get the amount from the request body
+
+    // Check if the amount is a valid number
+    if (typeof amount !== 'number' || amount <= 0) {
+      return res.status(400).json({ msg: 'Please provide a valid amount to restock.' });
+    }
+
+    // Find the sweet and increase its quantity
+    const sweet = await Sweet.findByIdAndUpdate(
+      req.params.id, 
+      { $inc: { quantity: amount } }, // Use $inc to increment the quantity
+      { new: true } // Return the updated document
+    );
+
+    if (!sweet) {
+      return res.status(404).json({ msg: 'Sweet not found' });
+    }
+    
     res.json(sweet); // Send back the updated sweet
   } catch (err) {
     console.error(err.message);
