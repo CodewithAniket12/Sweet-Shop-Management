@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
-import { ShoppingCart, Search, Plus, Edit, Trash2 } from 'lucide-react';
+import { ShoppingCart, Search, Plus, Edit, Trash2, Package } from 'lucide-react';
 import { jwtDecode } from "jwt-decode";
 import { getAllSweets, searchSweets, purchaseSweet, restockSweet, createSweet, updateSweet, deleteSweet } from '../api/sweets';
 
@@ -236,10 +236,17 @@ function DashboardPage() {
                     </button>
                     {isAdmin && (
                       <>
-                        <button onClick={() => handleEditClick(sweet)} className="text-blue-500 hover:text-blue-700">
+                        <button 
+                          onClick={() => handleRestock(sweet._id)} 
+                          className="flex items-center justify-center gap-1 bg-green-500 text-white p-2 rounded-md hover:bg-green-600 transition-colors"
+                          title="Restock"
+                        >
+                          <Package size={18} />
+                        </button>
+                        <button onClick={() => handleEditClick(sweet)} className="text-blue-500 hover:text-blue-700" title="Edit">
                           <Edit size={20} />
                         </button>
-                        <button onClick={() => handleDelete(sweet._id)} className="text-red-500 hover:text-red-700">
+                        <button onClick={() => handleDelete(sweet._id)} className="text-red-500 hover:text-red-700" title="Delete">
                           <Trash2 size={20} />
                         </button>
                       </>
