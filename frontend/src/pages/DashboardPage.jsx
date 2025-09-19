@@ -3,16 +3,16 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAllSweets, searchSweets, purchaseSweet, restockSweet } from '../api/sweets';
 import Swal from 'sweetalert2';
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, Search } from 'lucide-react'; // Import Search icon
 import { jwtDecode } from "jwt-decode";
 
 
 function DashboardPage() {
-    const navigate = useNavigate();
   const [sweets, setSweets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -23,8 +23,10 @@ function DashboardPage() {
       } catch (e) {
         console.error("Failed to decode token:", e);
       }
+    } else {
+      navigate('/login');
     }
-  }, []);
+  }, [navigate]);
 
   const fetchSweets = async (params = {}) => {
     try {
@@ -47,11 +49,16 @@ function DashboardPage() {
     fetchSweets();
   }, []);
 
+  // Update this function to only change the state
   const handleSearchChange = (e) => {
-    const term = e.target.value;
-    setSearchTerm(term);
-    fetchSweets({ name: term });
+    setSearchTerm(e.target.value);
   };
+  
+  // Add this new function to handle the search button click
+  const handleSearchSubmit = () => {
+    fetchSweets({ name: searchTerm });
+  };
+
 
   const handlePurchase = async (sweetId) => {
     try {
@@ -84,8 +91,7 @@ function DashboardPage() {
           return 'Please enter a valid amount!';
         }
       }
-    }
-);
+    });
 
     if (amount) {
       try {
@@ -106,12 +112,12 @@ function DashboardPage() {
       }
     }
   };
+  
   const handleLogout = () => {
     localStorage.removeItem('token');
     navigate('/login');
   };
 
-  
   if (loading) {
     return <div className="text-center mt-8">Loading sweets...</div>;
   }
@@ -120,21 +126,24 @@ function DashboardPage() {
     <div className="bg-gray-100 min-h-screen">
       <header className="bg-white shadow-md p-4 flex justify-between items-center">
         <h1 className="text-2xl font-bold text-pink-500">Aniket-Sweets</h1>
-
-       <button onClick={handleLogout} className="text-gray-600 hover:text-pink-500">
-          Logout
-        </button>
+        <button onClick={handleLogout} className="text-gray-600 hover:text-pink-500">Logout</button>
       </header>
 
       <main className="p-8">
-        <div className="mb-6">
+        <div className="mb-6 flex">
           <input
             type="text"
             placeholder="Search sweets by name..."
             value={searchTerm}
             onChange={handleSearchChange}
-            className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"
+            className="w-full px-4 py-2 border rounded-l-md focus:outline-none focus:ring-1 focus:ring-blue-600"
           />
+          <button
+            onClick={handleSearchSubmit}
+            className="px-4 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700"
+          >
+            <Search size={20} />
+          </button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {sweets.map((sweet) => (
